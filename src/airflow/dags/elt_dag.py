@@ -26,7 +26,7 @@ dag = DAG(
     default_args=default_args,
     description='Load the data from smard and insert to postgres.',
     start_date=datetime(2026,8,21), 
-    schedule='*/5 * * * *',
+    schedule='0 * * * *',
     catchup=False,   
 )
 
