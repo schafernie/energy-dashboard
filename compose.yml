@@ -3,7 +3,7 @@ services: #list of containers
     build:
       context: .
       dockerfile: dockerfile_raw_db
-    container_name: ed_raw_db_con
+    container_name: raw_db_con
     ports:
       - "5433:5432"
     networks: 
@@ -12,23 +12,93 @@ services: #list of containers
       - ed_raw_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: pg_isready
+      test: pg_isready -U user -d raw_db
 
-  app_serv:
-    build:
-      context: .
-      dockerfile: dockerfile_app
-    container_name: ed_app_con
-    ports:
-      - "8000:8000"
-    environment:
-      DB_HOST: raw_db_serv
-      DB_PORT: "5432"
+  
+  airflow_db_serv: 
+    image: postgres:17
     networks:
       - ed_network
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=airflow
+    healthcheck:
+      test: pg_isready -U airflow -d airflow
+  
+  airflow_init_serv:
+    image: apache/airflow:2.9.3
     depends_on:
-      raw_db_serv:
-        condition: service_healthy
+      - raw_db_serv
+      - airflow_db_serv
+    networks:
+      - ed_network
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:secret@airflow_db_serv/airflow  # DB connection string
+    command: >
+      bash -c "airflow db init &&
+               airflow users create --username airflow --password secret --firstname John --lastname Doe --role Admin --email admin@example.com"
+      # run DB migrations, then create the default admin user
+
+  airflow_webserver:  # Airflow web UI service
+    build:
+      context: .  # build using project root as context
+      dockerfile: dockerfile_airflow  # custom Dockerfile with Airflow + dbt/docker deps
+    user: root  # run as root (needed for docker.sock access)
+    depends_on:
+      airflow_init_serv:
+        condition: service_completed_successfully  # wait for db init/migrations + admin user creation to finish
+    networks:
+      - ed_network  # attach to the shared elt_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # let the container resolve the host machine
+    volumes:
+      - ./src/airflow/dags:/opt/airflow/dags  # mount DAG definitions
+      - ./src/loading:/opt/airflow/loading  # mount ELT scripts (and their shared modules) used by DAGs
+      - /var/run/docker.sock:/var/run/docker.sock  # allow container to control the host's Docker daemon
+    environment:
+      - LOAD_EX=n  # skip loading Airflow's example DAGs
+      - EXECUTOR=Local  # use the LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:secret@airflow_db_serv/airflow  # metadata DB connection string
+      - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@raw_db_serv:5432/raw_db  # Airflow connection to the destination DB (internal network port, not the host-mapped 5434)
+      - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=  # key used to encrypt sensitive data
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False  # auto-unpause new DAGs so the schedule starts firing without a manual trigger
+      - AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME=airflow  # default webserver login username
+      - AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD=secret  # default webserver login password
+      - AIRFLOW_WWW_USER_USERNAME=airflow  # username for the Airflow web user
+      - AIRFLOW_WWW_USER_PASSWORD=secret  # password for the Airflow web user
+      - AIRFLOW__WEBSERVER__SECRET_KEY=secret  # Flask secret key for the webserver
+    ports:
+      - "8080:8080"  # expose Airflow UI on host port 8080
+    command: webserver  # start the Airflow webserver process
+
+  airflow_scheduler:  # Airflow scheduler service
+    build:
+      context: .  # build using project root as context
+      dockerfile: dockerfile_airflow  # custom Dockerfile with Airflow + dbt/docker deps
+    user: root  # run as root (needed for docker.sock access)
+    depends_on:
+      airflow_init_serv:
+        condition: service_completed_successfully  # wait for db init/migrations + admin user creation to finish
+    networks:
+      - ed_network  # attach to the shared elt_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # let the container resolve the host machine
+    volumes:
+      - ./src/airflow/dags:/opt/airflow/dags  # mount DAG definitions
+      - ./src/loading:/opt/airflow/loading  # mount ELT scripts (and their shared modules) used by DAGs
+      - /var/run/docker.sock:/var/run/docker.sock  # allow container to control the host's Docker daemon
+    environment:
+      - LOAD_EX=n  # skip loading Airflow's example DAGs
+      - EXECUTOR=Local  # use the LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:secret@airflow_db_serv/airflow  # metadata DB connection string
+      - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@raw_db_serv:5432/raw_db  # Airflow connection to the destination DB (internal network port, not the host-mapped 5434)
+      - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=  # key used to encrypt sensitive data
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False  # auto-unpause new DAGs so the schedule starts firing without a manual trigger
+      - AIRFLOW_WWW_USER_USERNAME=airflow  # username for the Airflow web user
+      - AIRFLOW__WEBSERVER__SECRET_KEY=secret  # Flask secret key for the webserver
+      - AIRFLOW_WWW_USER_PASSWORD=secret  # password for the Airflow web user
+    command: scheduler  # start the Airflow scheduler process
 
 networks:
   ed_network:
@@ -36,5 +106,6 @@ networks:
 
 volumes:
   ed_raw_data:
+
 
 

@@ -1,4 +1,5 @@
-FROM postgres:17 
+
+FROM postgres:17
 
 ENV POSTGRES_USER=user
 ENV POSTGRES_PASSWORD=secret
