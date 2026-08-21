@@ -24,4 +24,4 @@ docker compose up -d
 - Airflow UI: [http://localhost:8080](http://localhost:8080) (username `airflow`, password `secret`)
 - Raw Postgres DB: `localhost:5433` (username `user`, password `secret`, db `raw_db`)
 
-The `loading_data_from_smard` DAG runs every 5 minutes, loading electricity consumption data into the `total_consumption` table.
+The `loading_data_from_smard` DAG runs every 5 minutes, loading the **Stromverbrauch: Gesamt (Netzlast)** (total electricity consumption / total grid load) series from SMARD into the `total_consumption` table.
