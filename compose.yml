@@ -1,0 +1,40 @@
+services: #list of containers
+  raw_db_serv:
+    build:
+      context: .
+      dockerfile: dockerfile_raw_db
+    container_name: ed_raw_db_con
+    ports:
+      - "5433:5432"
+    networks: 
+      - ed_network
+    volumes:
+      - ed_raw_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready
+
+  app_serv:
+    build:
+      context: .
+      dockerfile: dockerfile_app
+    container_name: ed_app_con
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: raw_db_serv
+      DB_PORT: "5432"
+    networks:
+      - ed_network
+    depends_on:
+      raw_db_serv:
+        condition: service_healthy
+
+networks:
+  ed_network:
+    driver: bridge
+
+volumes:
+  ed_raw_data:
+
+
