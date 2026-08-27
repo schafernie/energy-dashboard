@@ -3,4 +3,5 @@ matplotlib
 psycopg2-binary
 datetime 
 requests 
-
+fastapi
+uvicorn[standard]

@@ -1,15 +1,14 @@
 
 import psycopg2 #PostgreSQL driver for interacting with database via python  
+import os
 
 
-
-HOST = "raw_db_serv"
-PORT = "5432"
-USER = "user"
-PASSWORD = "secret"
-DB_NAME = "raw_db"
-
-TABLE_NAMES=["total_consumption","forecast"] 
+HOST = os.getenv("RAW_DB_HOST", "raw_db_serv")
+PORT = os.getenv("RAW_DB_PORT", "5432")
+USER = os.getenv("RAW_DB_USER", "user")
+PASSWORD = os.getenv("RAW_DB_PASSWORD", "secret")
+DB_NAME = os.getenv("RAW_DB_NAME", "raw_db")
+TABLE_NAMES=["total_consumption","forecast_total_consumption"] 
 
 
 
@@ -24,7 +23,8 @@ def get_connection():
     return connection 
 
 
-def insert_rows(connection, table_name, rows):
+def insert_rows(table_name, rows):
+    connection = get_connection()
     with connection.cursor() as cursor:
         cursor.executemany(
             f"""
@@ -36,54 +36,70 @@ def insert_rows(connection, table_name, rows):
             rows
         )
         connection.commit() #make insert permanent
+    connection.close()
 
 
-def load_table_as_series(connection, table_name):
+def load_table_as_series(table_name,start_date=None, end_date=None):
+    connection = get_connection() 
     with connection.cursor() as cursor:
-        cursor.execute(
+        if start_date == None or end_date == None:
+            cursor.execute(
+                        f"""
+                        SELECT date_time, value_mwh FROM {table_name}; 
+                        """
+                    )
+            rows = cursor.fetchall()
+        else:
+            cursor.execute(
             f"""
-            SELECT date_time, value_mwh FROM {table_name}; 
-            """
-        )
-        rows = cursor.fetchall() 
+            SELECT date_time, value_mwh FROM {table_name}
+            WHERE date_time BETWEEN %s AND %s;
+            """,
+            (start_date, end_date)
+            )
+            rows = cursor.fetchall() 
+    connection.close()
     return rows
 
 
-def get_earliest_time(connection, table_name):
+
+
+
+def get_earliest_time(table_name):
+    connection = get_connection() 
     with connection.cursor() as cursor:
         cursor.execute(
             f"""
-            SELECT date_time FROM {table_name} 
-            ORDER BY date_time ASC LIMIT 1;  
+            SELECT min(date_time) FROM {table_name};  
             """
         )
-        earliest = cursor.fetchone() 
-    if earliest:
-        return earliest[0]
-    else:
-        return None
+        earliest = cursor.fetchone()[0]    
+    connection.close()
+    return earliest
 
 
 
-def get_latest_time(connection,table_name):
+
+def get_latest_time(table_name):
+    connection = get_connection() 
     with connection.cursor() as cursor:
         cursor.execute(
         f"""
-        SELECT date_time FROM {table_name}
-        ORDER BY date_time DESC LIMIT 1; 
+        SELECT max(date_time) FROM {table_name}; 
         """
         )
-        latest = cursor.fetchone()
-    if latest:
-        return latest[0]
-    else:
-        return None
+        latest= cursor.fetchone()[0]
+    connection.close()
+    return latest
+
 
 
 
 
 if __name__=="__main__":
     print("testing")
+
+    ''' 
     from datetime import datetime, timezone,timedelta
    # time_stamp = datetime(2026,1,1,tzinfo=timezone.utc)
     #print(time_stamp)
@@ -117,14 +133,8 @@ if __name__=="__main__":
 
     ax.plot(df_window['date_time'],df_window['value_mwh'])
 
-
-
-
-
-
-
    # since = datetime(2025,1,1,tzinfo=timezone.utc)
-    
+    '''
  
 
     

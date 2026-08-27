@@ -14,17 +14,16 @@ services:
     healthcheck:
       test: pg_isready -U user -d raw_db
 
-
   airflow_db_serv:
     image: postgres:17
     networks:
       - ed_network
     environment:
-      - POSTGRES_USER=airflow
+      - POSTGRES_USER=airflow_db
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=airflow
     healthcheck:
-      test: pg_isready -U airflow -d airflow
+      test: pg_isready -U airflow_db -d airflow
 
   airflow_init_serv:
     image: apache/airflow:2.9.3
@@ -34,12 +33,12 @@ services:
     networks:
       - ed_network
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:secret@airflow_db_serv/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
     command: >
       bash -c "airflow db init &&
-               airflow users create --username airflow --password secret --firstname John --lastname Doe --role Admin --email admin@example.com"
+               airflow users create --username user --password secret --firstname John --lastname Doe --role Admin --email admin@example.com"
 
-  airflow_webserver:
+  airflow_webserver_serv:
     build:
       context: .
       dockerfile: dockerfile_airflow
@@ -58,22 +57,22 @@ services:
     environment:
       - LOAD_EX=n
       - EXECUTOR=Local
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:secret@airflow_db_serv/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
       - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@raw_db_serv:5432/raw_db
       - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
       - AIRFLOW__CORE__DEFAULT_TIMEZONE=Europe/Berlin
       - AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE=Europe/Berlin
-      - AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME=airflow
+      - AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME=user
       - AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD=secret
-      - AIRFLOW_WWW_USER_USERNAME=airflow
+      - AIRFLOW_WWW_USER_USERNAME=user
       - AIRFLOW_WWW_USER_PASSWORD=secret
       - AIRFLOW__WEBSERVER__SECRET_KEY=secret
     ports:
       - "8080:8080"
     command: webserver
 
-  airflow_scheduler:
+  airflow_scheduler_serv:
     build:
       context: .
       dockerfile: dockerfile_airflow
@@ -92,16 +91,42 @@ services:
     environment:
       - LOAD_EX=n
       - EXECUTOR=Local
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:secret@airflow_db_serv/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
       - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@raw_db_serv:5432/raw_db
       - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
       - AIRFLOW__CORE__DEFAULT_TIMEZONE=Europe/Berlin
       - AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE=Europe/Berlin
-      - AIRFLOW_WWW_USER_USERNAME=airflow
+      - AIRFLOW_WWW_USER_USERNAME=user
       - AIRFLOW__WEBSERVER__SECRET_KEY=secret
       - AIRFLOW_WWW_USER_PASSWORD=secret
     command: scheduler
+
+  app_serv:
+    build:
+      context: .
+      dockerfile: Dockerfile_app
+    container_name: app_con
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: raw_db_serv
+      DB_PORT: "5432"
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      raw_db_serv:
+        condition: service_healthy  
+    networks:
+      - ed_network
+
+
+
+
+
+
+
+
 
 networks:
   ed_network:
