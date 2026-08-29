@@ -53,7 +53,7 @@ services:
     volumes:
       - ./src/airflow/dags:/opt/airflow/dags
       - ./src/loading:/opt/airflow/loading
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./src/transform:/opt/airflow/transform
     environment:
       - LOAD_EX=n
       - EXECUTOR=Local
@@ -87,7 +87,7 @@ services:
     volumes:
       - ./src/airflow/dags:/opt/airflow/dags
       - ./src/loading:/opt/airflow/loading
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./src/transform:/opt/airflow/transform
     environment:
       - LOAD_EX=n
       - EXECUTOR=Local
@@ -120,16 +120,9 @@ services:
     networks:
       - ed_network
 
-
-
-
-
-
-
-
-
 networks:
   ed_network:
+    name: ed_network
     driver: bridge
 
 volumes:

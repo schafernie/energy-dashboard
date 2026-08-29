@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: smard
+    database: raw_db
+    schema: public
+    tables:
+      - name: total_consumption
+        columns:
+          - name: date_time
+            tests:
+              - not_null
+          - name: bidding_zone
+            tests:
+              - not_null
+          - name: value_mwh
+            tests:
+              - not_null

@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: stg_total_consumption
+    columns:
+      - name: date_time
+        tests:
+          - not_null
+      - name: bidding_zone
+        tests:
+          - not_null
+      - name: value_mwh
+        tests:
+          - not_null
