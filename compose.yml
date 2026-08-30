@@ -94,23 +94,6 @@ services:
       - AIRFLOW_WWW_USER_PASSWORD=secret
     command: scheduler
 
-  airflow_initial_trigger_serv:
-    image: apache/airflow:2.9.3
-    depends_on:
-      - airflow_scheduler_serv
-    networks:
-      - ed_network
-    environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
-    command: >
-      bash -c "
-      for i in $(seq 1 30); do
-        airflow dags trigger extract_load_and_transform && exit 0;
-        sleep 10;
-      done;
-      exit 1;
-      "
-
   app_serv:
     build:
       context: .
