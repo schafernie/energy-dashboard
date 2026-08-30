@@ -48,15 +48,11 @@ services:
         condition: service_completed_successfully
     networks:
       - ed_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./src/airflow/dags:/opt/airflow/dags
       - ./src/loading:/opt/airflow/loading
       - ./src/transform:/opt/airflow/transform
     environment:
-      - LOAD_EX=n
-      - EXECUTOR=Local
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
       - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@db_serv:5432/db
       - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=
@@ -82,15 +78,11 @@ services:
         condition: service_completed_successfully
     networks:
       - ed_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./src/airflow/dags:/opt/airflow/dags
       - ./src/loading:/opt/airflow/loading
       - ./src/transform:/opt/airflow/transform
     environment:
-      - LOAD_EX=n
-      - EXECUTOR=Local
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
       - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@db_serv:5432/db
       - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=

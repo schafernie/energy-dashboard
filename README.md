@@ -33,6 +33,8 @@ docker compose up -d
 - Airflow UI: [http://localhost:8080](http://localhost:8080) (username `user`, password `secret`)
 - Raw Postgres DB: `localhost:5433` (username `user`, password `secret`, db `db`)
 
+Wait about 5 minutes after `docker compose up` before checking the dashboard — the containers need to build/start, Airflow has to register the DAG, and the initial ELT run (SMARD load + dbt) needs to finish before the `total_consumption` table and `avg_yearly_consumption` mart have any data. Until then, both plots on the dashboard will appear empty.
+
 The `extract_load_and_transform` DAG runs hourly and has two tasks:
 
 1. `run_loading_from_smard_script` : loads the **Stromverbrauch: Gesamt (Netzlast)** (total electricity consumption / total grid load) series from SMARD into the `total_consumption` table.
