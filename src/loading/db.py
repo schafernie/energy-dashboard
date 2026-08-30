@@ -3,11 +3,11 @@ import psycopg2 #PostgreSQL driver for interacting with database via python
 import os
 
 
-HOST = os.getenv("RAW_DB_HOST", "raw_db_serv")
-PORT = os.getenv("RAW_DB_PORT", "5432")
-USER = os.getenv("RAW_DB_USER", "user")
-PASSWORD = os.getenv("RAW_DB_PASSWORD", "secret")
-DB_NAME = os.getenv("RAW_DB_NAME", "raw_db")
+HOST = os.getenv("DB_HOST", "db_serv")
+PORT = os.getenv("DB_PORT", "5432")
+USER = os.getenv("DB_USER", "user")
+PASSWORD = os.getenv("DB_PASSWORD", "secret")
+DB_NAME = os.getenv("DB_NAME", "db")
 TABLE_NAMES=["total_consumption","forecast_total_consumption"] 
 
 
@@ -91,6 +91,20 @@ def get_latest_time(table_name):
         latest= cursor.fetchone()[0]
     connection.close()
     return latest
+
+
+def load_avg_yearly_total_consumption():
+    connection = get_connection() 
+    with connection.cursor() as cursor:
+            cursor.execute(
+            f"""
+            SELECT year, avg_total_consumption_mwh FROM avg_yearly_consumption
+            ORDER BY year ASC;
+            """
+            )
+            rows = cursor.fetchall() 
+    connection.close()
+    return rows
 
 
 

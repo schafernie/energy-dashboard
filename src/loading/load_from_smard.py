@@ -1,7 +1,7 @@
     
 from datetime import datetime, timezone
 import requests
-import raw_db
+import db
 
 
 
@@ -54,19 +54,19 @@ def load_table(table_name,since):
                 rows.append(row)
 
     #insert to data base
-    raw_db.insert_rows(table_name, rows)
+    db.insert_rows(table_name, rows)
     print(f"table {table_name} with data id {data_id} was sucsessfully inserted to raw db.")
 
 
 if __name__=="__main__":
     #parameters
-    since = datetime(2020,1,1,0,0,0,tzinfo=timezone.utc) #earlist time in tabel
+    since = datetime(2016,1,1,0,0,0,tzinfo=timezone.utc) #earlist time in tabel
     table_name="total_consumption"
 
     #insert data
-    #connection=raw_db.get_connection()
-    earliest=raw_db.get_earliest_time(table_name)
-    latest=raw_db.get_latest_time(table_name)
+    #connection=db.get_connection()
+    earliest=db.get_earliest_time(table_name)
+    latest=db.get_latest_time(table_name)
     if earliest is not None and latest is not None:
         if earliest <= since:    
             since = latest

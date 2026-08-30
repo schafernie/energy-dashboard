@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: smard
-    database: raw_db
+    database: db
     schema: public
     tables:
       - name: total_consumption

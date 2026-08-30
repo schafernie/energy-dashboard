@@ -25,4 +25,19 @@ document.getElementById('start_date').addEventListener('change', plot);
 document.getElementById('end_date').addEventListener('change', plot);
 
 
+async function plotAvgYearly(){
+    const response = await fetch('/api/load_avg_yearly');
+    const data = await response.json();
+    Plotly.newPlot("avg_yearly_plot", [
+        { x: data.avg_yearly_total_consumption.year, y: data.avg_yearly_total_consumption.avg_mwh, name: "Average", type: "scatter", mode: "markers", marker: { size: 10 } },
+    ], {
+    xaxis: {title: "Year" },
+    yaxis: {title: "Average Consumption (MWh)"},
+    });
+}
+
+
+plotAvgYearly();
+
+
 

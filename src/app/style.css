@@ -5,3 +5,7 @@ body{
     height: 100vh;
     text-align:center;
 }
+
+.chart{
+    margin: 0 auto;
+}

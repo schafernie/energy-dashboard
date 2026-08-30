@@ -1,9 +1,9 @@
 services:
-  raw_db_serv:
+  db_serv:
     build:
       context: .
-      dockerfile: dockerfile_raw_db
-    container_name: raw_db_con
+      dockerfile: dockerfile_db
+    container_name: db_con
     ports:
       - "5433:5432"
     networks:
@@ -12,7 +12,7 @@ services:
       - ed_raw_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: pg_isready -U user -d raw_db
+      test: pg_isready -U user -d db
 
   airflow_db_serv:
     image: postgres:17
@@ -28,7 +28,7 @@ services:
   airflow_init_serv:
     image: apache/airflow:2.9.3
     depends_on:
-      - raw_db_serv
+      - db_serv
       - airflow_db_serv
     networks:
       - ed_network
@@ -58,7 +58,7 @@ services:
       - LOAD_EX=n
       - EXECUTOR=Local
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
-      - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@raw_db_serv:5432/raw_db
+      - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@db_serv:5432/db
       - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
       - AIRFLOW__CORE__DEFAULT_TIMEZONE=Europe/Berlin
@@ -92,7 +92,7 @@ services:
       - LOAD_EX=n
       - EXECUTOR=Local
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow_db:secret@airflow_db_serv/airflow
-      - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@raw_db_serv:5432/raw_db
+      - AIRFLOW_CONN_DESTINATION_POSTGRES=postgres://user:secret@db_serv:5432/db
       - AIRFLOW__CORE__FERNET_KEY=58nUcS7V9h-FPsbjeRqQV7Dzj416uaBANEuF10thTnU=
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
       - AIRFLOW__CORE__DEFAULT_TIMEZONE=Europe/Berlin
@@ -110,13 +110,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DB_HOST: raw_db_serv
+      DB_HOST: db_serv
       DB_PORT: "5432"
     volumes:
       - ./src:/app/src
     depends_on:
-      raw_db_serv:
-        condition: service_healthy  
+      db_serv:
+        condition: service_healthy
     networks:
       - ed_network
 

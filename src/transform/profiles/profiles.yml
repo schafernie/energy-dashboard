@@ -2,11 +2,11 @@ transform:
   outputs:
     dev:
       type: postgres
-      host: raw_db_serv
+      host: db_serv
       port: 5432
       user: user
       pass: secret
-      dbname: raw_db
+      dbname: db
       schema: public
       threads: 1
     local:
@@ -15,7 +15,7 @@ transform:
       port: 5433
       user: user
       pass: secret
-      dbname: raw_db
+      dbname: db
       schema: public
       threads: 1
   target: dev

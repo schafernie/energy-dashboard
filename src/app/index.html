@@ -7,12 +7,12 @@
    <script src="./plotly-2.35.2.min.js"></script>
 </head>
 <body>
-
+    <script src="./plot.js" defer></script>
     
     <h1> Total Electricity Consumption in Germany </h1>  
 
-    <div id="plot" style="width: 100%; height: 600px;"></div> 
-    <script src="./plot.js" defer></script>
+    <div id="plot" class="chart" style="width:30%; height: 500px;"></div>
+   
 
     <!-- buttons for start and end date -->
     <label for="start_date">Start: </label>
@@ -21,6 +21,10 @@
     <input type="date" id="end_date">
 
    <p>Total electricity consumption data provided by <a href="https://www.smard.de">SMARD</a>.</p>
- 
+
+    <h1> Average Yearly Electricity Consumption in Germany </h1>
+
+    <div id="avg_yearly_plot" class="chart" style="width: 30%; height: 500px;"></div>
+
 </body>
 </html>
