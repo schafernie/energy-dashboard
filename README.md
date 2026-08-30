@@ -39,9 +39,3 @@ The `extract_load_and_transform` DAG runs hourly and has two tasks:
 2. `dbt_run` : runs the dbt project (`--full-refresh`) to (re)build the staging view and the `avg_yearly_consumption` mart from the raw data.
 
 The dashboard queries this data via `/api/load` (time series) and `/api/load_avg_yearly` (yearly average, mart-backed) and plots both with Plotly.
-
-To trigger the DAG manually instead of waiting for the hourly schedule:
-
-```bash
-docker exec energy-dashboard-airflow_scheduler_serv-1 airflow dags trigger extract_load_and_transform
-```
